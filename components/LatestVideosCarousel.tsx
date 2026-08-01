@@ -4,16 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Play, ChevronLeft, ChevronRight } from "lucide-react";
-import { latestVideos } from "@/lib/latest-video";
+import type { LatestVideo } from "@/lib/latest-video";
 
-export default function LatestVideosCarousel() {
+interface LatestVideosCarouselProps {
+  videos: LatestVideo[];
+}
+
+export default function LatestVideosCarousel({ videos }: LatestVideosCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
 
   // Duplicate items for seamless looping
-  const items = [...latestVideos, ...latestVideos, ...latestVideos];
+  const items = [...videos, ...videos, ...videos];
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -25,7 +29,7 @@ export default function LatestVideosCarousel() {
 
     // Start scrolled to the middle section so we can go both ways
     const cardWidth = 360 + 16;
-    const middleStart = latestVideos.length * cardWidth;
+    const middleStart = videos.length * cardWidth;
     container.scrollLeft = middleStart;
 
     const checkScroll = () => {
@@ -41,7 +45,7 @@ export default function LatestVideosCarousel() {
         // If near start, jump forward to middle seamlessly
         else if (container.scrollLeft <= cardWidth * 2) {
           isAutoScrolling = true;
-          container.scrollLeft = middleStart + latestVideos.length * cardWidth;
+          container.scrollLeft = middleStart + videos.length * cardWidth;
           setTimeout(() => { isAutoScrolling = false; }, 50);
         } 
         else {
@@ -72,6 +76,8 @@ export default function LatestVideosCarousel() {
     const cardWidth = 360 + 16;
     container.scrollBy({ left: direction * cardWidth, behavior: "smooth" });
   };
+
+  if (videos.length === 0) return null;
 
   return (
     <motion.section

@@ -7,17 +7,25 @@ import ProfileCard from "@/components/ProfileCard";
 import TabSwitcher from "@/components/TabSwitcher";
 import SocialCard from "@/components/SocialCard";
 import ProductCard from "@/components/ProductCard";
+import LatestVideosCarousel from "@/components/LatestVideosCarousel";
 import Footer from "@/components/Footer";
-import { socialLinks } from "@/lib/links";
 import { products } from "@/lib/products";
-import type { SocialLink } from "@/lib/links";
+import { socialLinks } from "@/lib/links";
+import type { SocialLink, Stat } from "@/lib/links";
+import type { LatestVideo } from "@/lib/latest-video";
 
-interface PageClientProps {
-  initialLinks: SocialLink[];
+interface LinksPageClientProps {
+  statOverrides: Partial<Record<string, Stat>>;
+  videos: LatestVideo[];
 }
 
-export default function PageClient({ initialLinks }: PageClientProps) {
+export default function LinksPageClient({ statOverrides, videos }: LinksPageClientProps) {
   const [tab, setTab] = useState<"links" | "shop">("links");
+
+  const initialLinks: SocialLink[] = socialLinks.map((l) => {
+    const override = statOverrides[l.platform];
+    return override ? { ...l, stat: override } : l;
+  });
 
   return (
     <>
@@ -52,6 +60,8 @@ export default function PageClient({ initialLinks }: PageClientProps) {
             )}
           </motion.section>
         </AnimatePresence>
+
+        <LatestVideosCarousel videos={videos} />
 
         <Footer />
       </main>
