@@ -45,7 +45,7 @@ export default function LatestVideosCarousel() {
           setTimeout(() => { isAutoScrolling = false; }, 50);
         } 
         else {
-          container.scrollBy({ left: 0.5, behavior: "auto" });
+          container.scrollBy({ left: 0.25, behavior: "auto" });
         }
       }
       animationId = requestAnimationFrame(checkScroll);
