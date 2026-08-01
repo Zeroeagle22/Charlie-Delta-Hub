@@ -13,6 +13,7 @@ import { products } from "@/lib/products";
 import { socialLinks } from "@/lib/links";
 import type { SocialLink, Stat } from "@/lib/links";
 import type { LatestVideo } from "@/lib/latest-video";
+import { useDiscordMembers } from "@/hooks/useDiscordMembers";
 
 interface LinksPageClientProps {
   statOverrides: Partial<Record<string, Stat>>;
@@ -21,9 +22,13 @@ interface LinksPageClientProps {
 
 export default function LinksPageClient({ statOverrides, videos }: LinksPageClientProps) {
   const [tab, setTab] = useState<"links" | "shop">("links");
+  const { memberCount } = useDiscordMembers();
 
   const initialLinks: SocialLink[] = socialLinks.map((l) => {
     const override = statOverrides[l.platform];
+    if (l.platform === "Discord") {
+      return { ...l, stat: { value: memberCount.toLocaleString(), label: "Members" } };
+    }
     return override ? { ...l, stat: override } : l;
   });
 
