@@ -7,6 +7,7 @@ import ProfileCard from "@/components/ProfileCard";
 import TabSwitcher from "@/components/TabSwitcher";
 import SocialCard from "@/components/SocialCard";
 import ProductCard from "@/components/ProductCard";
+import LatestVideosCarousel from "@/components/LatestVideosCarousel";
 import Footer from "@/components/Footer";
 import { socialLinks } from "@/lib/links";
 import { products } from "@/lib/products";
@@ -47,6 +48,8 @@ export default function Page() {
             )}
           </motion.section>
         </AnimatePresence>
+
+        <LatestVideosCarousel />
 
         <Footer />
       </main>
