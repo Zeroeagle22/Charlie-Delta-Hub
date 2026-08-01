@@ -21,13 +21,17 @@ export default function ProfileCard() {
           src="/profile.png"
           alt="Charlie Delta"
           fill
-          className="object-cover"
+          className="object-cover scale-125"
           priority
         />
       </motion.div>
 
-      <h1 className="mt-5 text-2xl font-semibold tracking-tight">Charlie Delta</h1>
-      <p className="mt-1 text-sm text-white/60">Creator · Links & favorite things</p>
+      <h1 className="mt-5 text-2xl font-semibold tracking-tight">
+        Charlie Delta
+      </h1>
+      <p className="mt-1 text-sm text-white/60">
+        Creator · Links & favorite things
+      </p>
     </motion.div>
   );
 }
