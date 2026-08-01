@@ -7,31 +7,31 @@ export interface Product {
 
 export const products: Product[] = [
   {
-    name: "Aurora Mousepad",
-    image:
-      "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=900&q=80",
-    url: "https://example.com/shop/aurora-mousepad",
-    price: "$39",
-  },
-  {
-    name: "Merch Hoodie",
-    image:
-      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=900&q=80",
-    url: "https://example.com/shop/merch-hoodie",
-    price: "$89",
-  },
-  {
-    name: "Delta Keyboard",
+    name: "Mechanical Keyboard - RGB",
     image:
       "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=900&q=80",
-    url: "https://example.com/shop/delta-keyboard",
-    price: "$149",
+    url: "https://example.com/shop/rgb-keyboard",
+    price: "$129",
   },
   {
-    name: "Desk Mat",
+    name: "Oversized Hoodie",
     image:
-      "https://images.unsplash.com/photo-1615484477778-ca3b77940c25?w=900&q=80",
-    url: "https://example.com/shop/desk-mat",
-    price: "$29",
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=900&q=80",
+    url: "https://example.com/shop/oversized-hoodie",
+    price: "$79",
+  },
+  {
+    name: "Graphic Tee",
+    image:
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=900&q=80",
+    url: "https://example.com/shop/graphic-tee",
+    price: "$34",
+  },
+  {
+    name: "Techwear Jacket",
+    image:
+      "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=900&q=80",
+    url: "https://example.com/shop/techwear-jacket",
+    price: "$189",
   },
 ];
