@@ -23,6 +23,8 @@ export interface SocialLink {
   /** Optional stat. Swap in a real API later — see lib/api.ts */
   stat?: Stat;
   accent?: string; // brand accent color used subtly on hover
+  /** Set to false to hide this link card */
+  enabled?: boolean;
 }
 
 export const socialLinks: SocialLink[] = [
@@ -56,6 +58,7 @@ export const socialLinks: SocialLink[] = [
     url: "https://x.com/CharlieDelta",
     icon: Twitter,
     accent: "#1d9bf0",
+    enabled: false,
   },
   {
     platform: "Instagram",
@@ -77,6 +80,7 @@ export const socialLinks: SocialLink[] = [
     url: "https://www.patreon.com/CharlieDelta",
     icon: HeartHandshake,
     accent: "#ff424d",
+    enabled: false,
   },
   {
     platform: "Steam",
@@ -84,6 +88,7 @@ export const socialLinks: SocialLink[] = [
     url: "https://steamcommunity.com/id/CharlieDelta",
     icon: Gamepad2,
     accent: "#66c0f4",
+    enabled: false,
   },
   {
     platform: "Kick",
@@ -91,6 +96,7 @@ export const socialLinks: SocialLink[] = [
     url: "https://kick.com/CharlieDelta",
     icon: Zap,
     accent: "#53fc18",
+    enabled: false,
   },
   {
     platform: "Bluesky",
@@ -98,6 +104,7 @@ export const socialLinks: SocialLink[] = [
     url: "https://bsky.app/profile/charliedelta.bsky.social",
     icon: Cloud,
     accent: "#0085ff",
+    enabled: false,
   },
   {
     platform: "GitHub",

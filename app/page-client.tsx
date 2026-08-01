@@ -10,8 +10,13 @@ import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
 import { socialLinks } from "@/lib/links";
 import { products } from "@/lib/products";
+import type { SocialLink } from "@/lib/links";
 
-export default function Page() {
+interface PageClientProps {
+  initialLinks: SocialLink[];
+}
+
+export default function PageClient({ initialLinks }: PageClientProps) {
   const [tab, setTab] = useState<"links" | "shop">("links");
 
   return (
@@ -34,7 +39,7 @@ export default function Page() {
           >
             {tab === "links" ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                {socialLinks.filter(l => l.enabled !== false).map((l, i) => (
+                {initialLinks.filter(l => l.enabled !== false).map((l, i) => (
                   <SocialCard key={l.platform} link={l} index={i} />
                 ))}
               </div>

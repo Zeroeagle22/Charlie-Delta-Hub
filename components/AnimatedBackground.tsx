@@ -18,7 +18,7 @@ export default function AnimatedBackground() {
           alt=""
           fill
           priority
-          className="object-cover blur-xl brightness-[0.65] saturate-[1.05]"
+          className="object-cover blur-md brightness-[0.65] saturate-[1.05]"
         />
       </motion.div>
       {/* soft vignette */}
