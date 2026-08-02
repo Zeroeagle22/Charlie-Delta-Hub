@@ -1,81 +1,124 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Play, ChevronLeft, ChevronRight } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 import type { LatestVideo } from "@/lib/latest-video";
+
+const AUTOPLAY_DELAY_MS = 4000;
+const IDLE_RESUME_MS = 2500;
 
 interface LatestVideosCarouselProps {
   videos: LatestVideo[];
 }
 
 export default function LatestVideosCarousel({ videos }: LatestVideosCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
+  const autoplayRef = useRef<ReturnType<typeof Autoplay> | null>(null);
   const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(true);
 
-  // Duplicate items for seamless looping
-  const items = [...videos, ...videos, ...videos];
+  // The plugin instance must be stable across renders, so capture it in a ref.
+  autoplayRef.current ??= Autoplay({
+    delay: AUTOPLAY_DELAY_MS,
+    stopOnInteraction: true,
+    stopOnMouseEnter: true,
+  });
+
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: videos.length > 1, align: "start", containScroll: "trimSnaps" },
+    [autoplayRef.current]
+  );
+  const [showRight, setShowRight] = useState(videos.length > 1);
+
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!emblaApi) return;
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          emblaApi.scrollPrev();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          emblaApi.scrollNext();
+          break;
+        case "Home":
+          e.preventDefault();
+          emblaApi.scrollTo(0);
+          break;
+        case "End":
+          e.preventDefault();
+          emblaApi.scrollTo(emblaApi.scrollSnapList().length - 1);
+          break;
+      }
+    },
+    [emblaApi]
+  );
+
+  const scrollBy = useCallback(
+    (dir: number) => {
+      if (!emblaApi) return;
+      if (dir < 0) emblaApi.scrollPrev();
+      else emblaApi.scrollNext();
+    },
+    [emblaApi]
+  );
 
   useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setShowLeft(emblaApi.canScrollPrev());
+      setShowRight(emblaApi.canScrollNext());
+    };
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+    onSelect();
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onSelect);
+    };
+  }, [emblaApi]);
 
-    let animationId: number;
-    let isAutoScrolling = false;
-    let lastScrollTime = Date.now();
+  // Resume autoplay after a short idle window following any interaction.
+  useEffect(() => {
+    if (!emblaApi) return;
+    const root = emblaApi.rootNode();
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-    // Start scrolled to the middle section so we can go both ways
-    const cardWidth = 360 + 16;
-    const middleStart = videos.length * cardWidth;
-    container.scrollLeft = middleStart;
-
-    const checkScroll = () => {
-      if (!isHovered && !isAutoScrolling) {
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        
-        // If near end, jump back to middle seamlessly
-        if (container.scrollLeft >= maxScroll - cardWidth * 2) {
-          isAutoScrolling = true;
-          container.scrollLeft = middleStart;
-          setTimeout(() => { isAutoScrolling = false; }, 50);
-        } 
-        // If near start, jump forward to middle seamlessly
-        else if (container.scrollLeft <= cardWidth * 2) {
-          isAutoScrolling = true;
-          container.scrollLeft = middleStart + videos.length * cardWidth;
-          setTimeout(() => { isAutoScrolling = false; }, 50);
-        } 
-        else {
-          container.scrollBy({ left: 0.25, behavior: "auto" });
+    const scheduleResume = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (autoplayRef.current && !autoplayRef.current.isPlaying()) {
+          autoplayRef.current.play();
         }
-      }
-      animationId = requestAnimationFrame(checkScroll);
+      }, IDLE_RESUME_MS);
     };
 
-    const handleScroll = () => {
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      setShowLeft(container.scrollLeft > 10);
-      setShowRight(container.scrollLeft < maxScroll - 10);
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    animationId = requestAnimationFrame(checkScroll);
+    if (root) {
+      root.addEventListener("pointerdown", scheduleResume);
+      root.addEventListener("mouseenter", scheduleResume);
+      root.addEventListener("mouseleave", scheduleResume);
+      root.addEventListener("focusin", scheduleResume);
+      root.addEventListener("touchstart", scheduleResume);
+    }
+    emblaApi.on("pointerUp", scheduleResume);
+    emblaApi.on("settle", scheduleResume);
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
-      cancelAnimationFrame(animationId);
+      if (timer) clearTimeout(timer);
+      if (root) {
+        root.removeEventListener("pointerdown", scheduleResume);
+        root.removeEventListener("mouseenter", scheduleResume);
+        root.removeEventListener("mouseleave", scheduleResume);
+        root.removeEventListener("focusin", scheduleResume);
+        root.removeEventListener("touchstart", scheduleResume);
+      }
+      emblaApi.off("pointerUp", scheduleResume);
+      emblaApi.off("settle", scheduleResume);
     };
-  }, [isHovered]);
-
-  const scrollBy = (direction: number) => {
-    const container = scrollRef.current;
-    if (!container) return;
-    const cardWidth = 360 + 16;
-    container.scrollBy({ left: direction * cardWidth, behavior: "smooth" });
-  };
+  }, [emblaApi]);
 
   if (videos.length === 0) return null;
 
@@ -85,8 +128,6 @@ export default function LatestVideosCarousel({ videos }: LatestVideosCarouselPro
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="mt-16 w-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold tracking-tight">Latest Videos</h2>
@@ -111,56 +152,58 @@ export default function LatestVideosCarousel({ videos }: LatestVideosCarouselPro
       </div>
 
       <div
-        ref={scrollRef}
-        className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
-        style={{ scrollBehavior: "auto" }}
+        ref={emblaRef}
+        className="overflow-hidden"
+        aria-roledescription="carousel"
+        aria-label="Latest videos"
+        tabIndex={0}
+        onKeyDown={onKeyDown}
       >
-        {items.map((video, index) => (
-          <motion.article
-            key={`${video.id}-${index}`}
-            whileHover={{ y: -4 }}
-            whileTap={{ scale: 0.98 }}
-            className="shrink-0 w-[360px]"
-          >
-            <a
-              href={`https://www.youtube.com/watch?v=${video.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative block overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10 transition-all duration-300 hover:ring-white/20 hover:shadow-xl hover:shadow-black/30"
+        <div className="flex gap-4">
+          {videos.map((video) => (
+            <motion.article
+              key={video.id}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className="shrink-0 w-[360px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/40"
+              aria-roledescription="slide"
+              aria-label={video.title}
             >
-              <div className="aspect-video relative">
-                <Image
-                  src={video.thumbnail}
-                  alt={video.title}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="360px"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-black transition-all duration-200 group-hover:bg-white"
-                  >
-                    <Play className="h-6 w-6 ml-1" />
-                  </motion.div>
+              <a
+                href={`https://www.youtube.com/watch?v=${video.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative block overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10 transition-all duration-300 hover:ring-white/20 hover:shadow-xl hover:shadow-black/30"
+              >
+                <div className="aspect-video relative">
+                  <Image
+                    src={video.thumbnail}
+                    alt={video.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="360px"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-black transition-all duration-200 group-hover:bg-white"
+                    >
+                      <Play className="h-6 w-6 ml-1" />
+                    </motion.div>
+                  </div>
                 </div>
-              </div>
-              <div className="p-4">
-                <p className="text-sm font-medium text-white line-clamp-2">{video.title}</p>
-                <p className="mt-1 text-xs text-white/50">
-                  {new Date(video.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                </p>
-              </div>
-            </a>
-          </motion.article>
-        ))}
+                <div className="p-4">
+                  <p className="text-sm font-medium text-white line-clamp-2">{video.title}</p>
+                  <p className="mt-1 text-xs text-white/50">
+                    {new Date(video.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                </div>
+              </a>
+            </motion.article>
+          ))}
+        </div>
       </div>
-
-      <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
     </motion.section>
   );
 }
