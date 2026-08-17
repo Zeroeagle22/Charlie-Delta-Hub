@@ -76,48 +76,17 @@ export async function fetchYouTubeVideos(limit = 6): Promise<LatestVideo[] | nul
   });
 }
 
-interface TwitchToken {
-  token: string;
-  expiresAt: number;
-}
-
-let tokenCache: TwitchToken | null = null;
-
-async function twitchAppToken(): Promise<string | null> {
-  const cid = process.env.TWITCH_CLIENT_ID;
-  const sec = process.env.TWITCH_CLIENT_SECRET;
-  if (!cid || !sec) return null;
-  if (tokenCache && tokenCache.expiresAt > Date.now()) return tokenCache.token;
-  const res = await fetch(
-    `https://id.twitch.tv/oauth2/token?client_id=${cid}&client_secret=${sec}&grant_type=client_credentials`,
-    { method: "POST" },
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  tokenCache = {
-    token: data.access_token,
-    expiresAt: Date.now() + (data.expires_in - 60) * 1000,
-  };
-  return tokenCache.token;
-}
-
-export async function fetchTwitchFollowers(): Promise<TwitchStats | null> {
-  const cid = process.env.TWITCH_CLIENT_ID;
-  const bid = process.env.TWITCH_BROADCASTER_ID;
-  if (!cid || !bid) return null;
-  const token = await twitchAppToken();
-  if (!token) return null;
-  // Note: channels/followers needs an app access token and works for your own channel.
-  // Fallback if it 403s: use https://api.twitch.tv/helix/users/follows?to_id=<bid> (deprecated).
-  const res = await fetch(
-    `https://api.twitch.tv/helix/channels/followers?broadcaster_id=${bid}`,
-    {
-      headers: { "Client-Id": cid, Authorization: `Bearer ${token}` },
+export async function fetchTwitchFollowers(login: string): Promise<TwitchStats | null> {
+  try {
+    const res = await fetch(`https://decapi.me/twitch/followcount/${encodeURIComponent(login)}`, {
       next: { revalidate: 3600 },
-    },
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  const total = Number(data.total ?? 0);
-  return { followerCount: total, followersLabel: formatCount(total) };
+    });
+    if (!res.ok) return null;
+    const text = (await res.text()).trim();
+    const total = Number(text);
+    if (!Number.isFinite(total) || total <= 0) return null;
+    return { followerCount: total, followersLabel: formatCount(total) };
+  } catch {
+    return null;
+  }
 }
